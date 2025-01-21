@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "parentalcontrols",
+  "version": "${version}",
+  "name": "parentalcontrols",
+  "description": "Adds a server-side per-player time limit.",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/parentalcontrols/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "lol.sylvie.parental.ParentalControls"
+    ]
+  },
+  "mixins": [
+    "parentalcontrols.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
