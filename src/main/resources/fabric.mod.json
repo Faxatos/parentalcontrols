@@ -8,7 +8,7 @@
   "contact": {},
   "license": "MIT",
   "icon": "assets/parentalcontrols/icon.png",
-  "environment": "server",
+  "environment": "*",
   "entrypoints": {
     "main": [
       "lol.sylvie.parental.ParentalControls"
