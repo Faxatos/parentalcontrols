@@ -24,11 +24,15 @@ public class ParentalControls implements ModInitializer {
     public static final String MOD_ID = "parentalcontrols";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    public static final HashMap<UUID, Integer> ticksPerPlayer = new HashMap<>();
+    public static final HashMap<UUID, Integer> ticksUsedToday = new HashMap<>();
+    public static final HashMap<UUID, Integer> accumulatedTicks = new HashMap<>();
     private LocalDateTime lastTickTime = LocalDateTime.now();
 
     public static int ticksRemaining(UUID player) {
-        return (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20) - ticksPerPlayer.getOrDefault(player, 0);
+        int dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
+        int usedToday = ticksUsedToday.getOrDefault(player, 0);
+        int accumulated = Configuration.INSTANCE.allowTimeStacking ? accumulatedTicks.getOrDefault(player, 0) : 0;
+        return dailyAllowance + accumulated - usedToday;
     }
 
     public static boolean canPlayerJoin(ServerPlayerEntity player) {
@@ -46,17 +50,18 @@ public class ParentalControls implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             LocalDateTime currentTime = LocalDateTime.now();
             boolean midnightPassed = lastTickTime.getDayOfYear() != currentTime.getDayOfYear();
-            if (midnightPassed) ticksPerPlayer.clear();
+            if (midnightPassed) 
+                handleDayTransition();
 
             ArrayList<ServerPlayNetworkHandler> choppingBlock = new ArrayList<>(); // Avoids a concurrent modification error
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
                 UUID uuid = player.getUuid();
-                int ticks = ticksPerPlayer.getOrDefault(uuid, 0);
+                int usedToday = ticksUsedToday.getOrDefault(uuid, 0);
 
                 if (!canPlayerJoin(player)) {
                     choppingBlock.add(player.networkHandler);
                 } else {
-                    ticksPerPlayer.put(uuid, ticks + 1);
+                    ticksUsedToday.put(uuid, usedToday + 1);
                 }
             }
 
@@ -71,6 +76,40 @@ public class ParentalControls implements ModInitializer {
 
         CommandRegistrationCallback.EVENT.register(ParentalControlsCommand::register);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(Configuration::save));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Configuration.INSTANCE.playerAccumulatedTicks.clear();
+            Configuration.INSTANCE.playerAccumulatedTicks.putAll(accumulatedTicks);
+            Configuration.save();
+        }));
+    }
+
+    private void handleDayTransition() {
+        if (Configuration.INSTANCE.allowTimeStacking) {
+            int dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
+            int maxAccumulated = (int) (Configuration.INSTANCE.maxStackedHours * 60 * 60 * 20);
+            
+            for (UUID playerId : ticksUsedToday.keySet()) {
+                int usedToday = ticksUsedToday.get(playerId);
+                int leftover = Math.max(0, dailyAllowance - usedToday);
+                
+                if (leftover > 0) {
+                    int currentAccumulated = accumulatedTicks.getOrDefault(playerId, 0);
+                    int newAccumulated = Math.min(maxAccumulated, currentAccumulated + leftover);
+                    accumulatedTicks.put(playerId, newAccumulated);
+                    
+                    LOGGER.info("Player {} has {} leftover ticks, accumulated total: {}", playerId, leftover, newAccumulated);
+                }
+            }
+            
+            // Load any accumulated time from configuration
+            Configuration.INSTANCE.playerAccumulatedTicks.forEach((playerId, ticks) -> {
+                if (!accumulatedTicks.containsKey(playerId)) {
+                    accumulatedTicks.put(playerId, ticks);
+                }
+            });
+        }
+        
+        ticksUsedToday.clear();
+        LOGGER.info("New day started - daily usage reset");
     }
 }
