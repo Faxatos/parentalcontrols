@@ -1,6 +1,6 @@
 # Parental Controls
 
-Adds a server-side per-player time limit.
+Adds a server-side per-player time limit that stacks when unused.
 
 ![Icon featuring a clock and a shield icon](src/main/resources/assets/parentalcontrols/icon.png)
 
@@ -9,7 +9,19 @@ Adds a server-side per-player time limit.
 - Configurable time limit, kick message, etc.
 - Tick-based timer (lag spikes won't count toward elapsed time)
 - Reset at midnight
+- Possibility of stacking unused time (disabled by default)
 
 ## Usage
 
-The default time limit is 8 hours (480 minutes), but this along with some other settings can be changed in the `config/parentalcontrols.json` file. This can be reloaded on the fly with the `/parental reload` command. As a player, you can query your time remaining with the `/parental remaining` command. The time remaining is internally counted per-tick, assuming that the server runs at 20 ticks per second.
+The default time limit is 8 hours (`minutesAllowed: 480`), but this along with some other settings can be changed in the `config/parentalcontrols.json` file. This can be reloaded on the fly with an operator-only command ([see below](#commands)). 
+
+### Time Stacking
+
+Time stacking is disabled by default (`allow_time_stacking: false`). When enabled, any unused time from the daily allowance will be accumulated and carried over to the next day, up to a maximum of `max_stacked_hours` (default: 24 hours).
+The time remaining is internally counted per-tick, but checks are performed every second for better performance (assuming that the server runs at 20 ticks per second).
+
+## Commands
+
+- `/parental remaining`: As a player, query your time remaining
+- `/parental reload`: (Operator-only) Reload the configuration file
+- `/parental status`: (Operator-only) Show time stacking status and each player's accumulated time
