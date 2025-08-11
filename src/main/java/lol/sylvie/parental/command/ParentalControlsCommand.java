@@ -60,6 +60,32 @@ public class ParentalControlsCommand {
             return 1;
         }));
 
+        root.then(CommandManager.literal("status").requires(s -> s.hasPermissionLevel(4)).executes(ctx -> {
+            ServerCommandSource source = ctx.getSource();
+            
+            if (!Configuration.INSTANCE.allowTimeStacking) {
+                source.sendMessage(Text.literal("§eTime stacking is disabled."));
+                return 1;
+            }
+            
+            source.sendMessage(Text.literal("§6=== Parental Controls Status ==="));
+            source.sendMessage(Text.literal("§7Time stacking: §aEnabled"));
+            source.sendMessage(Text.literal("§7Max stacked: §f" + Configuration.INSTANCE.maxStackedHours + " hours"));
+            source.sendMessage(Text.literal("§7Daily allowance: §f" + Configuration.INSTANCE.minutesAllowed + " minutes"));
+            
+            if (ParentalControls.accumulatedTicks.isEmpty()) {
+                source.sendMessage(Text.literal("§7No players have accumulated time."));
+            } else {
+                source.sendMessage(Text.literal("§7Players with stacked time:"));
+                ParentalControls.accumulatedTicks.forEach((playerId, ticks) -> {
+                    String formatted = DurationFormatUtils.formatDuration((ticks / 20) * 1000L, "HH:mm:ss");
+                    source.sendMessage(Text.literal("§f" + playerId + "§7: §a" + formatted));
+                });
+            }
+            
+            return 1;
+        }));
+
         dispatcher.register(root);
     }
 }
