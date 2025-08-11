@@ -2,7 +2,7 @@
 
 Adds a server-side per-player time limit that stacks when unused.
 
-![Icon featuring a clock and a shield icon](src/main/resources/assets/parentalcontrols/icon.png)
+<img src="src/main/resources/assets/parentalcontrols/icon.png" alt="Icon featuring a clock and a shield icon" width="128">
 
 ## Features
 
