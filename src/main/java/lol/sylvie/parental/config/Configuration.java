@@ -4,10 +4,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.reflect.TypeToken;
 import lol.sylvie.parental.ParentalControls;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.*;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class Configuration {
     private static final Gson GSON = new GsonBuilder()
@@ -35,6 +40,11 @@ public class Configuration {
             Configuration parsed = GSON.fromJson(reader, Configuration.class);
             if (parsed == null) return false;
             INSTANCE = parsed;
+
+            if (INSTANCE.playerAccumulatedTicks == null) {
+                INSTANCE.playerAccumulatedTicks = new HashMap<>();
+            }
+            
             return true;
         } catch (FileNotFoundException exception) {
             ParentalControls.LOGGER.warn("Configuration file not found.");
@@ -55,4 +65,12 @@ public class Configuration {
     @SerializedName("exclude_operators")
     public boolean excludeOperators = false;
 
+    @SerializedName("allow_time_stacking")
+    public boolean allowTimeStacking = false;
+    
+    @SerializedName("max_stacked_hours")
+    public float maxStackedHours = 24.0f;
+    
+    @SerializedName("player_accumulated_ticks")
+    public Map<UUID, Integer> playerAccumulatedTicks = new HashMap<>();
 }
