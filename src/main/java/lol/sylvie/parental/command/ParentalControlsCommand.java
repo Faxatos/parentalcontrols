@@ -10,6 +10,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.apache.commons.lang3.time.DurationFormatUtils;
+import java.util.UUID;
 
 public class ParentalControlsCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher,
@@ -26,9 +27,26 @@ public class ParentalControlsCommand {
                 return 0;
             }
 
-            int ticksRemaining = ParentalControls.ticksRemaining(player.getUuid());
+            UUID playerId = player.getUuid();
+            int ticksRemaining = ParentalControls.ticksRemaining(playerId);
             String formatted = DurationFormatUtils.formatDuration((ticksRemaining / 20) * 1000L, "HH:mm:ss");
-            source.sendMessage(Text.literal("You have §l" + formatted + "§r remaining."));
+            StringBuilder message = new StringBuilder("You have §l" + formatted + "§r remaining.");
+
+            if (Configuration.INSTANCE.allowTimeStacking) {
+                int dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
+                int usedToday = ParentalControls.ticksUsedToday.getOrDefault(playerId, 0);
+                int accumulated = ParentalControls.accumulatedTicks.getOrDefault(playerId, 0);
+                
+                int dailyRemaining = Math.max(0, dailyAllowance - usedToday);
+                
+                String dailyFormatted = DurationFormatUtils.formatDuration((dailyRemaining / 20) * 1000L, "HH:mm:ss");
+                String accumulatedFormatted = DurationFormatUtils.formatDuration((accumulated / 20) * 1000L, "HH:mm:ss");
+                
+                message.append("\n§7Daily: §f").append(dailyFormatted);
+                message.append(" §7| Stacked: §f").append(accumulatedFormatted);
+            }
+
+            source.sendMessage(Text.literal(message.toString()));
             return 1;
         }));
 
