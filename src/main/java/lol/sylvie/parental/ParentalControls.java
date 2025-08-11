@@ -23,10 +23,12 @@ import java.util.UUID;
 public class ParentalControls implements ModInitializer {
     public static final String MOD_ID = "parentalcontrols";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private static final int TICKS_PER_CHECK = 20; // Check every second (20 ticks)
 
     public static final HashMap<UUID, Integer> ticksUsedToday = new HashMap<>();
     public static final HashMap<UUID, Integer> accumulatedTicks = new HashMap<>();
     private LocalDateTime lastTickTime = LocalDateTime.now();
+    private int tickCounter = 0;
 
     public static int ticksRemaining(UUID player) {
         int dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
@@ -48,25 +50,31 @@ public class ParentalControls implements ModInitializer {
         Configuration.load();
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            LocalDateTime currentTime = LocalDateTime.now();
-            boolean midnightPassed = lastTickTime.getDayOfYear() != currentTime.getDayOfYear();
-            if (midnightPassed) 
-                handleDayTransition();
+            tickCounter++;
+            
+            if (tickCounter >= TICKS_PER_CHECK) {
+                tickCounter = 0;
 
-            ArrayList<ServerPlayNetworkHandler> choppingBlock = new ArrayList<>(); // Avoids a concurrent modification error
-            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-                UUID uuid = player.getUuid();
-                int usedToday = ticksUsedToday.getOrDefault(uuid, 0);
+                LocalDateTime currentTime = LocalDateTime.now();
+                boolean midnightPassed = lastTickTime.toLocalDate().isBefore(currentTime.toLocalDate());
+                if (midnightPassed) 
+                    handleDayTransition();
 
-                if (!canPlayerJoin(player)) {
-                    choppingBlock.add(player.networkHandler);
-                } else {
-                    ticksUsedToday.put(uuid, usedToday + 1);
+                ArrayList<ServerPlayNetworkHandler> choppingBlock = new ArrayList<>(); // Avoids a concurrent modification error
+                for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                    UUID uuid = player.getUuid();
+                    int usedToday = ticksUsedToday.getOrDefault(uuid, 0);
+
+                    if (!canPlayerJoin(player)) {
+                        choppingBlock.add(player.networkHandler);
+                    } else {
+                        ticksUsedToday.put(uuid, usedToday + TICKS_PER_CHECK);
+                    }
                 }
-            }
 
-            choppingBlock.forEach(ParentalControls::disconnect);
-            lastTickTime = currentTime;
+                choppingBlock.forEach(ParentalControls::disconnect);
+                lastTickTime = currentTime;
+            }
         });
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
