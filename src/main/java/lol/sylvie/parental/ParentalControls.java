@@ -136,11 +136,26 @@ public class ParentalControls implements ModInitializer {
                     LOGGER.info("Player {} has {} leftover ticks, accumulated total: {}", playerId, leftover, newAccumulated);
                 }
             }
+
+            for (UUID playerId : new HashSet<>(accumulatedTicks.keySet())) {
+                if (ticksUsedToday.containsKey(playerId)) {
+                    continue;
+                }
+                
+                int leftover = dailyAllowance;
+                int currentAccumulated = accumulatedTicks.get(playerId);
+                int newAccumulated = Math.min(maxAccumulated, currentAccumulated + leftover);
+                accumulatedTicks.put(playerId, newAccumulated);
+                
+                LOGGER.info("Player {} (offline) received {} leftover ticks, accumulated total: {}", 
+                        playerId, leftover, newAccumulated);
+            }
             
             // Load any accumulated time from configuration
             Configuration.INSTANCE.playerAccumulatedTicks.forEach((playerId, ticks) -> {
                 if (!accumulatedTicks.containsKey(playerId)) {
-                    accumulatedTicks.put(playerId, ticks);
+                    int newAccumulated = Math.min(maxAccumulated, ticks + dailyAllowance);
+                    accumulatedTicks.put(playerId, newAccumulated);
                 }
             });
         }
