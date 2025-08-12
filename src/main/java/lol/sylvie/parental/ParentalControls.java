@@ -39,6 +39,28 @@ public class ParentalControls implements ModInitializer {
         return remainingDaily + accumulated;
     }
 
+    private static void consumeTime(UUID playerId, int ticksToConsume) {
+        int dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
+        int usedToday = ticksUsedToday.getOrDefault(playerId, 0);
+        int accumulated = accumulatedTicks.getOrDefault(playerId, 0);
+        
+        int remainingDaily = Math.max(0, dailyAllowance - usedToday);
+        
+        if (remainingDaily >= ticksToConsume) {
+            ticksUsedToday.put(playerId, usedToday + ticksToConsume);
+        } else {
+            if (remainingDaily > 0) {
+                ticksUsedToday.put(playerId, usedToday + remainingDaily);
+                ticksToConsume -= remainingDaily;
+            }
+            
+            if (ticksToConsume > 0 && accumulated > 0) {
+                int stackedToConsume = Math.min(ticksToConsume, accumulated);
+                accumulatedTicks.put(playerId, accumulated - stackedToConsume);
+            }
+        }
+    }
+
     public static boolean canPlayerJoin(ServerPlayerEntity player) {
         return ticksRemaining(player.getUuid()) > 0 || player.hasPermissionLevel(4) && Configuration.INSTANCE.excludeOperators;
     }
@@ -70,7 +92,7 @@ public class ParentalControls implements ModInitializer {
                     if (!canPlayerJoin(player)) {
                         choppingBlock.add(player.networkHandler);
                     } else {
-                        ticksUsedToday.put(uuid, usedToday + TICKS_PER_CHECK);
+                        consumeTime(uuid, TICKS_PER_CHECK);
                     }
                 }
 
