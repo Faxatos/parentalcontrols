@@ -25,13 +25,20 @@ public class ParentalControls implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final int TICKS_PER_CHECK = 20; // Check every second (20 ticks)
 
+    private static int dailyAllowance;
+    private static int maxAccumulated;
+
     public static final HashMap<UUID, Integer> ticksUsedToday = new HashMap<>();
     public static final HashMap<UUID, Integer> accumulatedTicks = new HashMap<>();
     private LocalDateTime lastTickTime = LocalDateTime.now();
     private int tickCounter = 0;
 
+    public static void updateTimeConstants() {
+        dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
+        maxAccumulated = (int) (Configuration.INSTANCE.maxStackedHours * 60 * 60 * 20);
+    }
+
     public static int ticksRemaining(UUID player) {
-        int dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
         int usedToday = ticksUsedToday.getOrDefault(player, 0);
         int accumulated = Configuration.INSTANCE.allowTimeStacking ? accumulatedTicks.getOrDefault(player, 0) : 0;
         
@@ -40,7 +47,6 @@ public class ParentalControls implements ModInitializer {
     }
 
     private static void consumeTime(UUID playerId, int ticksToConsume) {
-        int dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
         int usedToday = ticksUsedToday.getOrDefault(playerId, 0);
         int accumulated = accumulatedTicks.getOrDefault(playerId, 0);
         
@@ -117,8 +123,6 @@ public class ParentalControls implements ModInitializer {
 
     private void handleDayTransition() {
         if (Configuration.INSTANCE.allowTimeStacking) {
-            int dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
-            int maxAccumulated = (int) (Configuration.INSTANCE.maxStackedHours * 60 * 60 * 20);
             
             for (UUID playerId : ticksUsedToday.keySet()) {
                 int usedToday = ticksUsedToday.get(playerId);

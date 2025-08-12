@@ -44,11 +44,14 @@ public class Configuration {
             if (INSTANCE.playerAccumulatedTicks == null) {
                 INSTANCE.playerAccumulatedTicks = new HashMap<>();
             }
+
+            ParentalControls.updateTimeConstants();
             
             return true;
         } catch (FileNotFoundException exception) {
             ParentalControls.LOGGER.warn("Configuration file not found.");
             save();
+            ParentalControls.updateTimeConstants();
         } catch (IOException | JsonSyntaxException exception) {
             ParentalControls.LOGGER.error("Couldn't load JSON configuration", exception);
         }
