@@ -34,7 +34,9 @@ public class ParentalControls implements ModInitializer {
         int dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
         int usedToday = ticksUsedToday.getOrDefault(player, 0);
         int accumulated = Configuration.INSTANCE.allowTimeStacking ? accumulatedTicks.getOrDefault(player, 0) : 0;
-        return dailyAllowance + accumulated - usedToday;
+        
+        int remainingDaily = Math.max(0, dailyAllowance - usedToday);
+        return remainingDaily + accumulated;
     }
 
     public static boolean canPlayerJoin(ServerPlayerEntity player) {
