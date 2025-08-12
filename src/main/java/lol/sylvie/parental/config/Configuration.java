@@ -46,7 +46,8 @@ public class Configuration {
             }
 
             ParentalControls.updateTimeConstants();
-            
+            ParentalControls.loadAccumulatedTicksFromConfig();
+
             return true;
         } catch (FileNotFoundException exception) {
             ParentalControls.LOGGER.warn("Configuration file not found.");

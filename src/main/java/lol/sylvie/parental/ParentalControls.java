@@ -39,6 +39,13 @@ public class ParentalControls implements ModInitializer {
         maxAccumulated = (int) (Configuration.INSTANCE.maxStackedHours * 60 * 60 * 20);
     }
 
+    public static void loadAccumulatedTicksFromConfig() {
+        Configuration.INSTANCE.playerAccumulatedTicks.forEach((playerId, ticks) -> {
+            accumulatedTicks.put(playerId, ticks);
+            LOGGER.info("Loaded {} accumulated ticks for player {} from configuration", ticks, playerId);
+        });
+    }
+
     public static int ticksRemaining(UUID player) {
         int usedToday = ticksUsedToday.getOrDefault(player, 0);
         int accumulated = Configuration.INSTANCE.allowTimeStacking ? accumulatedTicks.getOrDefault(player, 0) : 0;
@@ -151,14 +158,10 @@ public class ParentalControls implements ModInitializer {
                 LOGGER.info("Player {} (offline) received {} leftover ticks, accumulated total: {}", 
                         playerId, leftover, newAccumulated);
             }
-            
-            // Load any accumulated time from configuration
-            Configuration.INSTANCE.playerAccumulatedTicks.forEach((playerId, ticks) -> {
-                if (!accumulatedTicks.containsKey(playerId)) {
-                    int newAccumulated = Math.min(maxAccumulated, ticks + dailyAllowance);
-                    accumulatedTicks.put(playerId, newAccumulated);
-                }
-            });
+
+            Configuration.INSTANCE.playerAccumulatedTicks.clear();
+            Configuration.INSTANCE.playerAccumulatedTicks.putAll(accumulatedTicks);
+            Configuration.save();
         }
         
         ticksUsedToday.clear();
