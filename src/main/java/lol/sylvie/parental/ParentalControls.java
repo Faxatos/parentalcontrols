@@ -25,10 +25,10 @@ public class ParentalControls implements ModInitializer {
     public static final String MOD_ID = "parentalcontrols";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final int TICKS_PER_CHECK = 20; // Check every second (20 ticks)
-    private static final int WARNING_THRESHOLD_TICKS = 300 * 20; // 5 minutes warning
 
     private static int dailyAllowance;
     private static int maxAccumulated;
+    private static int warningThresholdTicks;
 
     public static final HashMap<UUID, Integer> ticksUsedToday = new HashMap<>();
     public static final HashMap<UUID, Integer> accumulatedTicks = new HashMap<>();
@@ -37,6 +37,7 @@ public class ParentalControls implements ModInitializer {
     private int tickCounter = 0;
 
     public static void updateTimeConstants() {
+        warningThresholdTicks = (int) (Configuration.INSTANCE.warningThresholdSeconds * 20);
         dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
         maxAccumulated = (int) (Configuration.INSTANCE.maxStackedHours * 60 * 60 * 20);
     }
@@ -89,8 +90,8 @@ public class ParentalControls implements ModInitializer {
 
         int remaining = ticksRemaining(playerId);
         
-        if (remaining <= WARNING_THRESHOLD_TICKS && remaining > 0) {
-            int remainingSeconds = WARNING_THRESHOLD_TICKS / 20;
+        if (remaining <= warningThresholdTicks && remaining > 0) {
+            int remainingSeconds = warningThresholdTicks / 20;
             int minutesLeft = remainingSeconds / 60;
             int secondsLeft = remainingSeconds % 60;
             

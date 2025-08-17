@@ -74,6 +74,9 @@ public class Configuration {
     
     @SerializedName("max_stacked_hours")
     public float maxStackedHours = 24.0f;
+
+    @SerializedName("warning_threshold_seconds")
+    public int warningThresholdSeconds = 300;
     
     @SerializedName("player_accumulated_ticks")
     public Map<UUID, Integer> playerAccumulatedTicks = new HashMap<>();
