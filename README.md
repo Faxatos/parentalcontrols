@@ -10,10 +10,11 @@ Adds a server-side per-player time limit that stacks when unused.
 - Tick-based timer (lag spikes won't count toward elapsed time)
 - Reset at midnight
 - Possibility of stacking unused time (disabled by default)
+- Warning system that alerts players when time is running low
 
 ## Usage
 
-The default time limit is 8 hours (`minutesAllowed: 480`), but this along with some other settings can be changed in the `config/parentalcontrols.json` file. This can be reloaded on the fly with an operator-only command ([see below](#commands)). 
+The default time limit is 8 hours (`minutesAllowed: 480`). Players receive a warning message when their remaining time drops to the configured threshold (default: 5 minutes, configurable via `warning_threshold_seconds`). Those, along with some other settings, can be changed in the `config/parentalcontrols.json` file. Settings can be reloaded on the fly with an operator-only command ([see below](#commands)). 
 
 ### Time Stacking
 
