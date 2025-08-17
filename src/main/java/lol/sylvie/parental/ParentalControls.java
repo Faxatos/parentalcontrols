@@ -25,12 +25,14 @@ public class ParentalControls implements ModInitializer {
     public static final String MOD_ID = "parentalcontrols";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final int TICKS_PER_CHECK = 20; // Check every second (20 ticks)
+    private static final int WARNING_THRESHOLD_TICKS = 300 * 20; // 5 minutes warning
 
     private static int dailyAllowance;
     private static int maxAccumulated;
 
     public static final HashMap<UUID, Integer> ticksUsedToday = new HashMap<>();
     public static final HashMap<UUID, Integer> accumulatedTicks = new HashMap<>();
+    private static final HashSet<UUID> playersWarned = new HashSet<>();
     private LocalDateTime lastTickTime = LocalDateTime.now();
     private int tickCounter = 0;
 
@@ -75,6 +77,42 @@ public class ParentalControls implements ModInitializer {
         }
     }
 
+    private static void checkAndWarnPlayer(ServerPlayerEntity player) {
+        UUID playerId = player.getUuid();
+        
+        if (playersWarned.contains(playerId)) {
+            return;
+        }
+        if (player.hasPermissionLevel(4) && Configuration.INSTANCE.excludeOperators) {
+            return;
+        }
+
+        int remaining = ticksRemaining(playerId);
+        
+        if (remaining <= WARNING_THRESHOLD_TICKS && remaining > 0) {
+            int remainingSeconds = WARNING_THRESHOLD_TICKS / 20;
+            int minutesLeft = remainingSeconds / 60;
+            int secondsLeft = remainingSeconds % 60;
+            
+            String timeMessage;
+            if (minutesLeft > 0) {
+                if (secondsLeft > 0) {
+                    timeMessage = minutesLeft + " minute" + (minutesLeft == 1 ? "" : "s") + 
+                                 " and " + secondsLeft + " second" + (secondsLeft == 1 ? "" : "s");
+                } else {
+                    timeMessage = minutesLeft + " minute" + (minutesLeft == 1 ? "" : "s");
+                }
+            } else {
+                timeMessage = secondsLeft + " second" + (secondsLeft == 1 ? "" : "s");
+            }
+            
+            player.sendMessage(Text.literal("§6⚠ Warning: You have " + timeMessage + " remaining before you're disconnected!"), false);
+            playersWarned.add(playerId);
+            
+            LOGGER.info("Warned player {} with {} ticks remaining", playerId, remaining);
+        }
+    }
+
     public static boolean canPlayerJoin(ServerPlayerEntity player) {
         return ticksRemaining(player.getUuid()) > 0 || player.hasPermissionLevel(4) && Configuration.INSTANCE.excludeOperators;
     }
@@ -107,6 +145,7 @@ public class ParentalControls implements ModInitializer {
                         choppingBlock.add(player.networkHandler);
                     } else {
                         consumeTime(uuid, TICKS_PER_CHECK);
+                        checkAndWarnPlayer(player);
                     }
                 }
 
@@ -165,6 +204,7 @@ public class ParentalControls implements ModInitializer {
         }
         
         ticksUsedToday.clear();
+        playersWarned.clear();
         LOGGER.info("New day started - daily usage reset");
     }
 }
