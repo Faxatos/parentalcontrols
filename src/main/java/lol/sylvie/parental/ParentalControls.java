@@ -25,9 +25,9 @@ public class ParentalControls implements ModInitializer {
     public static final String MOD_ID = "parentalcontrols";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    private static int dailyAllowance;
-    private static int maxAccumulated;
-    private static int warningThresholdTicks;
+    private static int dailyMinutesAllowedInTicks;
+    private static int maxAccumulableHoursInTicks;
+    private static int warningThresholdInTicks;
     private static int ticksPerCheck;
 
     public static final HashMap<UUID, Integer> ticksUsedToday = new HashMap<>();
@@ -38,9 +38,9 @@ public class ParentalControls implements ModInitializer {
 
     public static void updateTimeConstants() {
         ticksPerCheck = (int) (Configuration.INSTANCE.checkIntervalTicks);
-        warningThresholdTicks = (int) (Configuration.INSTANCE.warningThresholdSeconds * 20);
-        dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
-        maxAccumulated = (int) (Configuration.INSTANCE.maxStackedHours * 60 * 60 * 20);
+        warningThresholdInTicks = (int) (Configuration.INSTANCE.warningThresholdSeconds * ticksPerCheck);
+        dailyMinutesAllowedInTicks = (int) (Configuration.INSTANCE.minutesAllowed * 60 * ticksPerCheck);
+        maxAccumulableHoursInTicks = (int) (Configuration.INSTANCE.maxStackedHours * 60 * 60 * ticksPerCheck);
     }
 
     public static void loadAccumulatedTicksFromConfig() {
@@ -53,7 +53,7 @@ public class ParentalControls implements ModInitializer {
         int usedToday = ticksUsedToday.getOrDefault(player, 0);
         int accumulated = Configuration.INSTANCE.allowTimeStacking ? accumulatedTicks.getOrDefault(player, 0) : 0;
         
-        int remainingDaily = Math.max(0, dailyAllowance - usedToday);
+        int remainingDaily = Math.max(0, dailyMinutesAllowedInTicks - usedToday);
         return remainingDaily + accumulated;
     }
 
@@ -61,7 +61,7 @@ public class ParentalControls implements ModInitializer {
         int usedToday = ticksUsedToday.getOrDefault(playerId, 0);
         int accumulated = accumulatedTicks.getOrDefault(playerId, 0);
         
-        int remainingDaily = Math.max(0, dailyAllowance - usedToday);
+        int remainingDaily = Math.max(0, dailyMinutesAllowedInTicks - usedToday);
         
         if (remainingDaily >= ticksToConsume) {
             ticksUsedToday.put(playerId, usedToday + ticksToConsume);
@@ -90,8 +90,8 @@ public class ParentalControls implements ModInitializer {
 
         int remaining = ticksRemaining(playerId);
         
-        if (remaining <= warningThresholdTicks && remaining > 0) {
-            int remainingSeconds = warningThresholdTicks / 20;
+        if (remaining <= warningThresholdInTicks && remaining > 0) {
+            int remainingSeconds = warningThresholdInTicks / ticksPerCheck;
             int minutesLeft = remainingSeconds / 60;
             int secondsLeft = remainingSeconds % 60;
             
@@ -173,11 +173,11 @@ public class ParentalControls implements ModInitializer {
             
             for (UUID playerId : ticksUsedToday.keySet()) {
                 int usedToday = ticksUsedToday.get(playerId);
-                int leftover = Math.max(0, dailyAllowance - usedToday);
+                int leftover = Math.max(0, dailyMinutesAllowedInTicks - usedToday);
                 
                 if (leftover > 0) {
                     int currentAccumulated = accumulatedTicks.getOrDefault(playerId, 0);
-                    int newAccumulated = Math.min(maxAccumulated, currentAccumulated + leftover);
+                    int newAccumulated = Math.min(maxAccumulableHoursInTicks, currentAccumulated + leftover);
                     accumulatedTicks.put(playerId, newAccumulated);
                 }
             }
@@ -187,9 +187,9 @@ public class ParentalControls implements ModInitializer {
                     continue;
                 }
                 
-                int leftover = dailyAllowance;
+                int leftover = dailyMinutesAllowedInTicks;
                 int currentAccumulated = accumulatedTicks.get(playerId);
-                int newAccumulated = Math.min(maxAccumulated, currentAccumulated + leftover);
+                int newAccumulated = Math.min(maxAccumulableHoursInTicks, currentAccumulated + leftover);
                 accumulatedTicks.put(playerId, newAccumulated);
             }
 
