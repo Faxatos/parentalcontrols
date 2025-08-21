@@ -66,6 +66,9 @@ public class Configuration {
     @SerializedName("disconnect_message")
     public String disconnectMessage = "§cYou have reached your time limit for today.";
 
+    @SerializedName("warning_message")
+    public String warningMessage = "§6⚠ Warning: You have %time% remaining before you're disconnected!";
+
     @SerializedName("exclude_operators")
     public boolean excludeOperators = false;
 
@@ -77,6 +80,9 @@ public class Configuration {
 
     @SerializedName("warning_threshold_seconds")
     public int warningThresholdSeconds = 300;
+
+    @SerializedName("check_interval_ticks")
+    public int checkIntervalTicks = 20;
     
     @SerializedName("player_accumulated_ticks")
     public Map<UUID, Integer> playerAccumulatedTicks = new HashMap<>();

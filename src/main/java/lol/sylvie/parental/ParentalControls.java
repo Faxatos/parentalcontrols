@@ -24,11 +24,11 @@ import java.util.UUID;
 public class ParentalControls implements ModInitializer {
     public static final String MOD_ID = "parentalcontrols";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    private static final int TICKS_PER_CHECK = 20; // Check every second (20 ticks)
 
     private static int dailyAllowance;
     private static int maxAccumulated;
     private static int warningThresholdTicks;
+    private static int ticksPerCheck;
 
     public static final HashMap<UUID, Integer> ticksUsedToday = new HashMap<>();
     public static final HashMap<UUID, Integer> accumulatedTicks = new HashMap<>();
@@ -37,6 +37,7 @@ public class ParentalControls implements ModInitializer {
     private int tickCounter = 0;
 
     public static void updateTimeConstants() {
+        ticksPerCheck = (int) (Configuration.INSTANCE.checkIntervalTicks);
         warningThresholdTicks = (int) (Configuration.INSTANCE.warningThresholdSeconds * 20);
         dailyAllowance = (int) (Configuration.INSTANCE.minutesAllowed * 60 * 20);
         maxAccumulated = (int) (Configuration.INSTANCE.maxStackedHours * 60 * 60 * 20);
@@ -107,7 +108,8 @@ public class ParentalControls implements ModInitializer {
                 timeMessage = secondsLeft + " second" + (secondsLeft == 1 ? "" : "s");
             }
             
-            player.sendMessage(Text.literal("§6⚠ Warning: You have " + timeMessage + " remaining before you're disconnected!"), false);
+            String warningMessage = Configuration.INSTANCE.warningMessage.replace("%time%", timeMessage);
+            player.sendMessage(Text.literal(warningMessage), false);
             playersWarned.add(playerId);
             
             LOGGER.info("Warned player {} with {} ticks remaining", playerId, remaining);
@@ -129,7 +131,7 @@ public class ParentalControls implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             tickCounter++;
             
-            if (tickCounter >= TICKS_PER_CHECK) {
+            if (tickCounter >= ticksPerCheck) {
                 tickCounter = 0;
 
                 LocalDateTime currentTime = LocalDateTime.now();
@@ -145,7 +147,7 @@ public class ParentalControls implements ModInitializer {
                     if (!canPlayerJoin(player)) {
                         choppingBlock.add(player.networkHandler);
                     } else {
-                        consumeTime(uuid, TICKS_PER_CHECK);
+                        consumeTime(uuid, ticksPerCheck);
                         checkAndWarnPlayer(player);
                     }
                 }
