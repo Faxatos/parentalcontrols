@@ -46,7 +46,6 @@ public class ParentalControls implements ModInitializer {
     public static void loadAccumulatedTicksFromConfig() {
         Configuration.INSTANCE.playerAccumulatedTicks.forEach((playerId, ticks) -> {
             accumulatedTicks.put(playerId, ticks);
-            LOGGER.info("Loaded {} accumulated ticks for player {} from configuration", ticks, playerId);
         });
     }
 
@@ -111,8 +110,6 @@ public class ParentalControls implements ModInitializer {
             String warningMessage = Configuration.INSTANCE.warningMessage.replace("%time%", timeMessage);
             player.sendMessage(Text.literal(warningMessage), false);
             playersWarned.add(playerId);
-            
-            LOGGER.info("Warned player {} with {} ticks remaining", playerId, remaining);
         }
     }
 
@@ -182,8 +179,6 @@ public class ParentalControls implements ModInitializer {
                     int currentAccumulated = accumulatedTicks.getOrDefault(playerId, 0);
                     int newAccumulated = Math.min(maxAccumulated, currentAccumulated + leftover);
                     accumulatedTicks.put(playerId, newAccumulated);
-                    
-                    LOGGER.info("Player {} has {} leftover ticks, accumulated total: {}", playerId, leftover, newAccumulated);
                 }
             }
 
@@ -196,9 +191,6 @@ public class ParentalControls implements ModInitializer {
                 int currentAccumulated = accumulatedTicks.get(playerId);
                 int newAccumulated = Math.min(maxAccumulated, currentAccumulated + leftover);
                 accumulatedTicks.put(playerId, newAccumulated);
-                
-                LOGGER.info("Player {} (offline) received {} leftover ticks, accumulated total: {}", 
-                        playerId, leftover, newAccumulated);
             }
 
             Configuration.INSTANCE.playerAccumulatedTicks.clear();
